@@ -14,6 +14,11 @@ on:
     branches:
       - main
 
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
 env:
   HATCH_VERSION: 1.7.0
 
@@ -45,6 +50,31 @@ jobs:
 
       - name: Publish test coverage
         uses: codecov/codecov-action@v1
+
+  integration:
+    if: github.event_name == 'pull_request'
+    name: Runt integration tests
+    environment: account-admin
+    runs-on: ubuntu-latest
+    env:
+      ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
+      ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+      ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2.5.0
+
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: 'Run Azure CLI commands'
+        run: |
+          az account show
+          az group list
 
   fmt:
     runs-on: ubuntu-latest
