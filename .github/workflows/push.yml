@@ -52,6 +52,7 @@ jobs:
     env:
       DATABRICKS_HOST: "${{ secrets.DATABRICKS_HOST }}"
       ARM_TENANT_ID: "${{ secrets.ARM_TENANT_ID }}"
+      ARM_CLIENT_ID: "${{ secrets.ARM_CLIENT_ID }}"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2.5.0
