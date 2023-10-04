@@ -24,23 +24,17 @@ env:
 
 jobs:
   ci:
-    strategy:
-      matrix:
-        pyVersion: [ '3.10' ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Unshallow
-        run: git fetch --prune --unshallow
 
       - name: Install Python
         uses: actions/setup-python@v4
         with:
           cache: 'pip'
           cache-dependency-path: '**/pyproject.toml'
-          python-version: ${{ matrix.pyVersion }}
+          python-version: '3.10'
 
       - name: Install hatch
         run: pip install hatch==$HATCH_VERSION
@@ -63,7 +57,7 @@ jobs:
 
       - uses: databricks/setup-cli@main
 
-      # For now, Databricks SDK canot pickup the OIDC Federated Credential, but we can get the ID token the similar way as @actions/core and send it as client_credential
+      # For now, Databricks SDK cannot pickup the OIDC Federated Credential, but we can get the ID token the similar way as @actions/core and send it as client_credential
       # https://github.com/actions/toolkit/blob/0d638344746a652dedde8baa2ac04a10e0e0a53d/packages/core/src/oidc-utils.ts
       # https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow#third-case-access-token-request-with-a-federated-credential
       - uses: azure/login@v1
