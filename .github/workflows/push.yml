@@ -59,9 +59,12 @@ jobs:
       ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
       ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
       ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
+      DATABRICKS_AUTH_TYPE: azure-cli
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2.5.0
+
+      - uses: databricks/setup-cli
 
       - uses: azure/login@v1
         with:
@@ -70,8 +73,11 @@ jobs:
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
       - name: 'Run Azure CLI commands'
-        run: |
-          az account show
+        run: az account show
+
+      - run: databricks clusters list
+
+      - run: echo "$TEST_SOMETHING is there!"
 
   fmt:
     runs-on: ubuntu-latest
