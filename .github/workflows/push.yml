@@ -60,7 +60,7 @@ jobs:
       ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
       ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
       DATABRICKS_HOST: "${{ secrets.DATABRICKS_HOST }}"
-      DATABRICKS_AUTH_TYPE: "azure-cli"
+#      DATABRICKS_AUTH_TYPE: "azure-cli"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2.5.0
