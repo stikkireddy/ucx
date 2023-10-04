@@ -64,7 +64,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2.5.0
 
-      - uses: databricks/setup-cli
+      - uses: databricks/setup-cli@main
 
       - uses: azure/login@v1
         with:
