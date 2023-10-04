@@ -21,6 +21,8 @@ def github_azure_oidc(cfg: 'Config') -> Optional[HeaderFactory]:
         # not in GitHub actions
         return None
 
+    # Environment variables are public:
+    # https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers#adding-permissions-settings
     headers = {'Authorization': f"Bearer {os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']}" }
     endpoint = f"{os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']}&audience=api://AzureADTokenExchange"
     response = requests.get(endpoint, headers=headers)
@@ -29,16 +31,23 @@ def github_azure_oidc(cfg: 'Config') -> Optional[HeaderFactory]:
 
     _, payload, _ = client_assertion.split(".")
     b64_decoded = base64.standard_b64decode(payload + "==").decode("utf8")
+    # claims are: 'jti', 'sub', 'aud', 'ref', 'sha', 'repository', 'repository_owner', 'repository_owner_id', 'run_id',
+    # 'run_number', 'run_attempt', 'repository_visibility', 'repository_id', 'actor_id', 'actor', 'workflow',
+    # 'head_ref', 'base_ref', 'event_name', 'ref_protected', 'ref_type', 'workflow_ref', 'workflow_sha', 'environment',
+    # 'environment_node_id', 'job_workflow_ref', 'job_workflow_sha', 'runner_environment', 'enterprise', 'iss', 'nbf',
+    # 'exp', 'iat'
     claims = json.loads(b64_decoded)
 
-    print(f'OIDC CLAIMS: {claims.keys()}')
+    print(f'aud={claims["aud"]} sub={claims["sub"]}')
 
     def token_source_for(resource: str) -> TokenSource:
         aad_endpoint = cfg.arm_environment.active_directory_endpoint
         return ClientCredentials(client_id=cfg.azure_client_id,
                                  client_secret=cfg.azure_client_secret,
                                  token_url=f"{aad_endpoint}{cfg.azure_tenant_id}/oauth2/token",
-                                 endpoint_params={"resource": resource, 'client_assertion': client_assertion},
+                                 endpoint_params={"resource": resource,
+                                                  'client_assertion': client_assertion,
+                                                  'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'},
                                  use_params=True)
 
     logger.info("Configured AAD token for Service Principal (%s)", cfg.azure_client_id)
