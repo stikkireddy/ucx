@@ -12,46 +12,34 @@ from databricks.sdk.oauth import TokenSource, ClientCredentials
 logger = logging.getLogger(__name__)
 
 
-@credentials_provider('github-azure-oidc', ['host'])
+@credentials_provider('github-azure-oidc', ['host', 'azure_client_id'])
 def github_azure_oidc(cfg: 'Config') -> Optional[HeaderFactory]:
+    # Client ID is the minimal thing we need, as otherwise we get
+    # AADSTS700016: Application with identifier 'https://token.actions.githubusercontent.com' was not found
+    # in the directory '...'.
     if not cfg.is_azure:
         return None
     if 'ACTIONS_ID_TOKEN_REQUEST_TOKEN' not in os.environ:
-        print(f'NOPE?...')
         # not in GitHub actions
         return None
 
-    # Environment variables are public:
-    # https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers#adding-permissions-settings
+    # See https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers
     headers = {'Authorization': f"Bearer {os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']}" }
     endpoint = f"{os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']}&audience=api://AzureADTokenExchange"
     response = requests.get(endpoint, headers=headers)
 
+    # get the ID Token with aud=api://AzureADTokenExchange sub=repo:org/repo:environment:name
     client_assertion = response.json()['value']
 
-    _, payload, _ = client_assertion.split(".")
-    b64_decoded = base64.standard_b64decode(payload + "==").decode("utf8")
-    # claims are: 'jti', 'sub', 'aud', 'ref', 'sha', 'repository', 'repository_owner', 'repository_owner_id', 'run_id',
-    # 'run_number', 'run_attempt', 'repository_visibility', 'repository_id', 'actor_id', 'actor', 'workflow',
-    # 'head_ref', 'base_ref', 'event_name', 'ref_protected', 'ref_type', 'workflow_ref', 'workflow_sha', 'environment',
-    # 'environment_node_id', 'job_workflow_ref', 'job_workflow_sha', 'runner_environment', 'enterprise', 'iss', 'nbf',
-    # 'exp', 'iat'
-    claims = json.loads(b64_decoded)
-
-    # aud=api://AzureADTokenExchange sub=repo:org/repo:environment:name
-
-    def token_source_for(resource: str) -> TokenSource:
-        aad_endpoint = cfg.arm_environment.active_directory_endpoint
-        return ClientCredentials(client_id=cfg.azure_client_id,
-                                 client_secret=cfg.azure_client_secret,
-                                 token_url=f"{aad_endpoint}{cfg.azure_tenant_id}/oauth2/token",
-                                 endpoint_params={"resource": resource,
-                                                  'client_assertion': client_assertion,
-                                                  'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'},
-                                 use_params=True)
-
-    logger.info("Configured AAD token for Service Principal (%s)", cfg.azure_client_id)
-    inner = token_source_for(cfg.effective_azure_login_app_id)
+    logger.info("Configured AAD token for GitHub Actions OIDC (%s)", cfg.azure_client_id)
+    params = {"resource": cfg.effective_azure_login_app_id,
+               'client_assertion': client_assertion,
+               'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'}
+    inner = ClientCredentials(client_id=cfg.azure_client_id,
+                              client_secret=cfg.azure_client_secret,
+                              token_url=cfg.oidc_endpoints.token_endpoint,
+                              endpoint_params=params,
+                              use_params=True)
 
     def refreshed_headers() -> Dict[str, str]:
         return {'Authorization': f"Bearer {inner.token().access_token}", }
