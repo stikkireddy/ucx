@@ -57,13 +57,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABRICKS_HOST: "${{ secrets.DATABRICKS_HOST }}"
-#      DATABRICKS_AUTH_TYPE: "azure-cli"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2.5.0
 
       - uses: databricks/setup-cli@main
 
+      # For now, Databricks SDK canot pickup the OIDC Federated Credential, but we can get the ID token the similar way as @actions/core and send it as client_credential
+      # https://github.com/actions/toolkit/blob/0d638344746a652dedde8baa2ac04a10e0e0a53d/packages/core/src/oidc-utils.ts
+      # https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow#third-case-access-token-request-with-a-federated-credential
       - uses: azure/login@v1
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
