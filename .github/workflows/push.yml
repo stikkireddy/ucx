@@ -73,13 +73,12 @@ jobs:
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
-      - name: 'Run Azure CLI commands'
-        run: az account show
-
-      - run: echo "$TEST_SOMETHING is there!"
+      - run: echo "${{ vars.TEST_SOMETHING }} is there!"
 
       - run: databricks clusters list
 
+      - name: 'Run Azure CLI commands'
+        run: az account show
 
   fmt:
     runs-on: ubuntu-latest
