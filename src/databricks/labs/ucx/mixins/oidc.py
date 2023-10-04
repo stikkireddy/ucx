@@ -35,9 +35,13 @@ def github_azure_oidc(cfg: 'Config') -> Optional[HeaderFactory]:
     params = {"resource": cfg.effective_azure_login_app_id,
                'client_assertion': client_assertion,
                'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'}
+    aad_endpoint = cfg.arm_environment.active_directory_endpoint
+    if not cfg.azure_tenant_id:
+        # detect Azure AD Tenant ID
+        cfg.azure_tenant_id = cfg.oidc_endpoints.token_endpoint.replace(aad_endpoint, '').split('/')[0]
     inner = ClientCredentials(client_id=cfg.azure_client_id,
                               client_secret=cfg.azure_client_secret,
-                              token_url=cfg.oidc_endpoints.token_endpoint,
+                              token_url=f"{aad_endpoint}{cfg.azure_tenant_id}/oauth2/token",
                               endpoint_params=params,
                               use_params=True)
 
