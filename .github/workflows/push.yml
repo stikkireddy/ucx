@@ -55,6 +55,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2.5.0
 
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          cache: 'pip'
+          cache-dependency-path: '**/pyproject.toml'
+          python-version: '3.10'
+
+      - run: pip install databricks-sdk==0.10.0
+      - run: python src/databricks/labs/ucx/mixins/oidc.py
+
       - uses: databricks/setup-cli@main
 
       # For now, Databricks SDK cannot pickup the OIDC Federated Credential, but we can get the ID token the similar way as @actions/core and send it as client_credential
