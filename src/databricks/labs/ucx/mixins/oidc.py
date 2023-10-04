@@ -38,7 +38,7 @@ def github_azure_oidc(cfg: 'Config') -> Optional[HeaderFactory]:
     # 'exp', 'iat'
     claims = json.loads(b64_decoded)
 
-    print(f'aud={claims["aud"]} sub={claims["sub"]}')
+    # aud=api://AzureADTokenExchange sub=repo:org/repo:environment:name
 
     def token_source_for(resource: str) -> TokenSource:
         aad_endpoint = cfg.arm_environment.active_directory_endpoint

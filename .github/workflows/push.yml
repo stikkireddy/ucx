@@ -51,6 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABRICKS_HOST: "${{ secrets.DATABRICKS_HOST }}"
+      ARM_TENANT_ID: "${{ secrets.ARM_TENANT_ID }}"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2.5.0
