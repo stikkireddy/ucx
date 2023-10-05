@@ -23,6 +23,7 @@ def github_azure_oidc(cfg: 'Config') -> Optional[HeaderFactory]:
         # not in GitHub actions
         return None
 
+
     headers = {'Authorization': f"Bearer {os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']}" }
     endpoint = f"{os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']}&audience=api://AzureADTokenExchange"
     response = requests.get(endpoint, headers=headers)
